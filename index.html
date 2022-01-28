@@ -12,8 +12,9 @@
 	</head>
 
 	<body>
-
+		<video id="localScreen" autoplay playsinline></video>
 		<video id="localVideo" autoplay playsinline></video>
+		<video id="remoteScreen" autoplay playsinline></video>
 		<video id="remoteVideo" autoplay playsinline></video>
 
 		<div>
@@ -34,9 +35,12 @@
 		<script type="text/javascript">
 			'use strict';
 
-			const mediaStreamConstraints = {video: true};
-			const offerOptions = {offerToReceiveVideo:1};
+			const mediaStreamConstraints = {video: true, audio: true};
+			const offerOptions = {offerToReceiveVideo:1, offerToReceiveAudio:1};
 			const servers = {'iceServers': [{'url': 'stun:stun.l.google.com:19302'}]};
+
+			const localScreen = document.getElementById('localScreen')
+			const remooteScreen = document.getElementById('remoteScreen')
 
 			const localVideo = document.getElementById('localVideo');
 			const remoteVideo = document.getElementById('remoteVideo');
@@ -77,6 +81,18 @@
 					}
 				)
 				.catch(logError);
+
+			// get the local screen stream
+			navigator.mediaDevices.getDisplayMedia()
+				.then((mediaStream) => {
+
+					localScreen.srcObject = mediaStream;
+
+					for (const track of mediaStream.getTracks())
+						peerMediaStream.addTrack(track);
+					}
+				)
+				.catch(logError);
 	
 			function handleConnection(event) {
 
@@ -103,7 +119,10 @@
 			function gotRemoteMediaStream(event) {
 
 				const mediaStream = event.stream;
-				remoteVideo.srcObject = mediaStream;
+				const audio = mediaStream.getAudioTracks()
+				const video = mediaStream.getVideoTracks()
+				remoteVideo.srcObject = new MediaStream([audio[0], video[0]]);
+				remoteScreen.srcObject = new MediaStream([video[1]]);
 				console.log('remote peer connection received remote stream')
 			}
 
